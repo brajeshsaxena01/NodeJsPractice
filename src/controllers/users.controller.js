@@ -54,13 +54,35 @@ router.get("/:id", async (req, res) => {
         return res.status(500).send({ message: error.message })
     }
 })
-router.get("/", authenticate, authorize(['user']), async (req, res) => {
+router.get("/", authenticate, authorize(['admin']), async (req, res) => {
 
     try {
         let page = req.query.page || 1
         let limit = req.query.limit || 50
         let skip = (page - 1) * limit
-        const users = await User.find().skip(skip).limit(limit).lean().exec()
+
+
+        // let start = (page - 1) * limit;
+        // let end = start + limit - 1;
+        /* Note: As I have stored the users as string so the below method does not work, to work this method
+        I have to store the users as list(array) like using for loop and rPushe like this 
+            for (const user of users) {
+                await client.rPush("users", JSON.stringify(user));
+            }
+
+        */
+        // const redisUsers = await client.lRange("users", start, end);
+
+        // if (redisUsers.length > 0) {
+        //     return res.json({
+        //         source: "redis",
+        //         users: redisUsers.map(u => JSON.parse(u))
+        //     });
+        // }
+
+        // const users = await User.find().skip(skip).limit(limit).lean().explain("executionStats").exec();
+        // console.log(users.executionStats.executionTimeMillis);
+        const users = await User.find().skip(skip).limit(limit).lean().exec();
         return res.status(200).send(users)
     } catch (error) {
         return res.status(500).send({ message: error.message })
@@ -91,5 +113,4 @@ const generateToken = (user) => {
     const token = jwt.sign({ user }, process.env.SECRET_KEY, { expiresIn: 3600 })
     return token
 }
-
 module.exports = { userController: router }
