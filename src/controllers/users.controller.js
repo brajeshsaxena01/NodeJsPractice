@@ -11,7 +11,15 @@ router.post("/signup", async (req, res) => {
         const user = await User.create(req.body)
         const token = generateToken(user)
         const users = await User.find().lean().exec()
-        client.set("users", JSON.stringify(users))
+        client.set("users", JSON.stringify(users), { EX: 3600 }) // Expires in 1hr
+
+        //px for miliseconds
+        // await client.set("users", JSON.stringify(users), { PX: 60000 }); // 1 min
+
+        // await client.set("users", JSON.stringify(users));
+        // await client.expire("users", 3600);
+        // await client.ttl("users"); // returns seconds remaining
+
         client.set(`user.${user._id}`, JSON.stringify(user))
         return res.status(201).send({ user, token })
     } catch (error) {
